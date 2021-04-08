@@ -496,6 +496,8 @@ b.  Why does the niche preemption model look like a straight line in the RAD plo
 
 1.  As stated by Magurran (2004) the  ${D = } \sum p_i^2$ derivation of Simpson's Diversity only applies to communities of infinite size. For anything but an infinitely large community, Simpson's Diversity index is calculated as ${D = } \sum \frac{n_i(n_i -1)} {N(N-1)}$. 
 Assuming a finite community, calculate Simpson's D, 1 - D, and Simpson's inverse (i.e. 1/D) for `site 1` of the BCI site-by-species matrix. 
+> The equation established as SimpD calculates Simpson's Diversity for a finite community. 
+
 ```{r}
 
 SimpD <- function (x=""){
