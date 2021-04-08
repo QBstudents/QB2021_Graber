@@ -1,10 +1,10 @@
 ---
 title: '7\. Data wrangling with simulated communitites'
-author: Eli Graber 'Z620: Quantitative Biodiversity, Indiana University'
+author: 'Eli Graber Z620: Quantitative Biodiversity, Indiana University'
 header-includes:
    - \usepackage{array}
 output: pdf_document
-geometry: margin=2.54cm
+geometry: margin=2.54cm  
 ---
 
 ## OVERVIEW
@@ -239,11 +239,10 @@ But the SAR is also influenced by biological phenomena including dispersal limit
   
 1. Using the `sim_poisson_community` function from the `mobsim`, along with any of the data wrangling tools described above, construct a species area relationship (SAR).
 Feel free to choose different values for the the function's arguments. 
-Create an SAR plot and calculate the corresponding *z*-value. 
->0.5951182, is the Z value. 
+Create an SAR plot and calculate the corresponding *z*-value.  
 
 ```{r}
-
+options(warn = -1)
 com2 <- sim_poisson_community(s_pool = 25, n_sim = 1000, sad_type = "lnorm", 
         sad_coef = list("meanlog" = 2, "sdlog" = 1))
 
@@ -274,7 +273,6 @@ However, in nature, this is rarely the case.
 Species often have patchy distributions, which can be simulated in `mobsim` using the the `sim_thomas_community` function.
 Include a plot of the patchy distribution using examples above.
 Then, create another SAR plot from the patchy community and compare its *z*-values to that of the random distribution. 
->0.6174736, is the z value. 
 
 ```{r}
 comtom <- sim_thomas_community(s_pool = 25, n_sim = 1000, sad_type = "lnorm", 
