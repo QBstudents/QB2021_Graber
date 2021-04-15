@@ -2,7 +2,7 @@
 title: '8\. Worksheet: Among Site (Beta) Diversity -- Part 1'
 author: 'Eli Graber; Z620: Quantitative Biodiversity, Indiana University'
 output: pdf_document
-geometry: margin=2.54cm
+geometry: margin=2.54cm 
 ---
 
 ## OVERVIEW
