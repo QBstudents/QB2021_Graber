@@ -1,8 +1,12 @@
 ---
 title: '8\. Worksheet: Among Site (Beta) Diversity -- Part 2'
-author: "Student Name; Z620: Quantitative Biodiversity, Indiana University"
-date: "`r format(Sys.time(), '%d %B, %Y')`"
-output: pdf_document
+author: 'Eli Graber; Z620: Quantitative Biodiversity, Indiana University'
+date: "r format(Sys.time(), %d %B, %Y)"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+  word_document: default
 geometry: margin=2.54cm
 ---
 
@@ -42,10 +46,9 @@ In the R code chunk below, provide the code to:
 4. load the `vegan` R package (be sure to install if needed).  
 
 ```{r}
-
-
-
-
+rm(list=ls())
+getwd()
+setwd("~/GitHub/QB2021_Graber/2.Worksheets/8.BetaDiversity")
 ```
 
 ## 2) LOADING DATA
@@ -54,7 +57,14 @@ In the R code chunk below, load the `doubs` dataset from the `ade4` package
 
 ```{r}
 # note, pleae do not print the dataset when submitting
-
+package.list <- c('vegan', 'ade4', 'viridis', 'gplots', 'BiodiversityR', 'indicspecies')
+  for (package in package.list) {
+    if (!require(package, character.only = TRUE, quietly = TRUE)) {
+      install.packages(package)
+      library(package, character.only = TRUE)
+    }
+  }
+data(doubs)
 
 
 ```
@@ -70,20 +80,22 @@ In the code chunk below, test the hypothesis that fish community composition var
 
 ```{r}
 
-
-
-
-
-
-
-
+quality <- c(rep("HQ", 13), rep("MQ", 5), rep("LQ", 6), rep("MQ", 5))
+fish <- doubs$fish
+fish <- fish[-8, ]
+adonis(fish ~ quality, method = "bray", permutations = 999)
+indval <- multipatt(fish, cluster = quality, func = "IndVal.g", control = how(nperm=999))
+summary(indval)
+fish.rel <- decostand(fish, method = "total")
+phi <- multipatt(fish.rel, cluster = quality, func = "r.g", control = how(nperm=999))
+summary(phi)
 
 ```
 
 ***Question 1***: Based on the PERMANOVA, IndVal, and phi coefficient analyses, what did you learn about the relationship between habitat quality and the fish species composition?
 Are the different analyses consistent with one another and do they agree with the visualizations (heat maps, cluster dendograms, ordinations) that you created?
 
-> ***Answer 1***: 
+> ***Answer 1***: Every species seems to be impacted by the quality of the lake and this is true across the different analysis. This does seem to agree with our visualizations in which we indicated that Alal and Satr were indicators. 
 
 
 ### B.  Multivariate Procedures for Continuous Designs
@@ -96,16 +108,16 @@ In the R code chunk below, do the following:
 
 ```{r}
 
-
-
-
+fish.dist <- vegdist(doubs$fish[-8,], method = "bray")
+env.dist <- vegdist(scale(doubs$env[-8,]), method = "euclid")
+mantel(fish.dist, env.dist)
 
 ```
 
 ***Question 2***: What do the results from our Mantel test suggest about fish diversity and stream environmental conditions? 
 How does this relate to your hypothesis about stream quality influencing fish communities?
 
-> ***Answer 2***:  
+> ***Answer 2***:  There is a strong correlation between fish diversity and the quality of the stream environment. It supports it because a larger diversity of fish would be sustained by higher quality environments. 
 
 ### ii.  Constrained Ordination
 In the R code chunk below, do the following:  
@@ -119,29 +131,46 @@ In the R code chunk below, do the following:
 7. add vectors that demonstrate the influence of each environmental factor the constrained ordination.   
 ```{r}
 
+env.chem <- as.matrix(doubs$env[-8, 5:11])
+fish.db <- vegdist(fish, method = "bray")
+doubs.dbrda <-dbrda(fish.db ~ ., as.data.frame(env.chem))
+ordiplot(doubs.dbrda)
+doubs.dbrda.mod0 <- dbrda(fish.db ~ 1, as.data.frame(env.chem))
+ordiplot(doubs.dbrda.mod0)
+doubs.dbrda.mod1 <- dbrda(fish.db ~ ., as.data.frame(env.chem))
+doubs.dbrda <- ordiR2step(doubs.dbrda.mod0, doubs.dbrda.mod1, perm.max = 200)
+doubs.dbrda$call
+doubs.dbrda$anova
+ordiplot(doubs.dbrda)
+permutest(doubs.dbrda, permutations = 999)
+envfit(doubs.dbrda, env.chem[, c(4,6,7)], perm = 999)
+dbrda.explainvar1 <- round(doubs.dbrda$CCA$eig[1]/
+                            sum(c(doubs.dbrda$CCA$eig, doubs.dbrda$CA$eig)), 3) * 100
+dbrda.explainvar2 <- round(doubs.dbrda$CCA$eig[2] /
+                             sum(c(doubs.dbrda$CCA$eig, doubs.dbrda$CA$eig)), 3) *100
+par(mar = c(5, 5, 4, 4) +0.1)
+plot(scores(doubs.dbrda, display = "wa"), xlim = c(-1.3, 1.1), ylim = c(-1.1, 2.7), 
+     xlab = paste("dbRDA 1 (", dbrda.explainvar1, "%", sep = ""), 
+     ylab = paste("dbRDA 2 (", dbrda.explainvar2, "%)", sep = ""),
+     pch = 16, cex = 2.0, type = "n", cex.lab = 1.5, cex.axis = 1.2, axes = FALSE)
+axis(side = 1, labels = T, lwd.ticks =2, cex.axis = 1.2, las =1)
+axis(side = 2, labels = T, lwd.ticks =2, cex.axis = 1.2, las =1)
+abline(h = 0, v = 0, lty = 3)
+box(lwd = 2)
+points(scores(doubs.dbrda, display = "wa"), pch = 19, cex = 3, bg = "gray", col = "gray")
+text(scores(doubs.dbrda, display = "wa"), labels = row.names(scores(doubs.dbrda, display = "wa")))
 
+vectors <- scores(doubs.dbrda, display = "bp")
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+arrows(0, 0, vectors[,1], vectors[,2], lwd = 2, lty = 1, length = 0.2, col = "red")
+text(vectors[,1], vectors[,2], pos = 3, labels = row.names(vectors))
+axis(side = 3, lwd.ticks = 2, cex.axis = 1.2, las = 1, col = "red", lwd = 2.2, at = pretty(range(vectors[,1])) * 2, labels = pretty(range(vectors[,1])))
+axis(side = 4,lwd.ticks = 2, cex.axis = 1.2, las = 1, col = "red", lwd = 2.2, at = pretty(range(vectors[,2])) * 2, labels = pretty(range(vectors[,2])))
 ```
 
 ***Question 3***: Based on the constrained ordination, what are the environmental variables (or groups of correlated variables) that seem to be contributing to variation in fish community structure?
 
-> ***Answer 3***: 
+> ***Answer 3***: Oxygen levels, nitrogen levels, and bdo significantly contribute to the variation in the fish community structure. 
 
 ### iii. Variation Partitioning
 In the code chunk below,   
@@ -153,10 +182,39 @@ In the code chunk below,
 5. Partition the variation among sites into the relative importance of space, environment, spatially structured environment, and residuals,
 6. Plot the variation partitioning output to visualize it.  
 ```{r}
+doubs.dbrda$anova
+env.mod <- model.matrix(~ oxy + bdo + nit, as.data.frame(env.chem))[,-1]
+rs <- rowSums(fish)/sum(fish)
 
+doubs.pcnmw <- pcnm(dist(doubs$xy[-8,]), w = rs, dist.ret = T)
 
+doubs.pcnmw$values > 0
 
+doubs.space <- as.data.frame(scores(doubs.pcnmw))
+doubs.pcnm.mod0 <- dbrda(fish.db ~ 1, doubs.space)
+doubs.pcnm.mod1 <- dbrda(fish.db ~ ., doubs.space)
+step.pcnm <- ordiR2step(doubs.pcnm.mod0, doubs.pcnm.mod1, perm.max = 200)
 
+plot(step.pcnm)
+
+step.pcnm$anova
+
+space.mod <- model.matrix(~ PCNM2 + PCNM3 + PCNM5 + PCNM1 + PCNM13 + PCNM16 + PCNM6, doubs.space)[,-1]
+doubs.total.env <- dbrda(fish.db ~ env.mod)
+doubs.total.space <- dbrda(fish.db ~ space.mod)
+doubs.env.cond.space <- dbrda(fish.db ~ env.mod + Condition(space.mod))
+doubs.space.cond.env <- dbrda(fish.db ~ space.mod + Condition(env.mod))
+permutest(doubs.env.cond.space, permutations = 999)
+permutest(doubs.space.cond.env, permutations = 999)
+permutest(doubs.total.env, permutation = 999)
+permutest(doubs.total.space, permutations = 999)
+doubs.varpart <- varpart(fish.db, env.mod, space.mod)
+doubs.varpart
+par(mar = c(2,2,2,2))
+plot(doubs.varpart)
+text(1, 0.25, "Space")
+text(0, 0.25, "Env")
+mtext("Variation Partitioning of\nDoubs Fish Diversity", side = 3, line = -3)
 
 
 
@@ -164,18 +222,82 @@ In the code chunk below,
 
 ***Question 4***: Interpret the variation partitioning results.   
 
-> ***Answer 4***: 
+> ***Answer 4***: 74% of the variation is explained by environment (13%), space (24%), and environment and space (37%) with environment and space combined having the greatest impact on fish distrubtion. 27% of the variation is not explained by either of these factors. These factors are clearly large contributors to the variations fish distribution. 
 
 ## SYNTHESIS
 
 As in the previous worksheet, use the `mobsim` package from the DataWrangling module to simulate two local communities each containing 1000 individuals (*N*) and 25 species (*S*), but with one having a random spatial distribution and the other having a patchy spatial distribution. 
 Take ten (10) subsamples from each site using the quadrat function and answer the following questions:
-
+```{r}
+package.list <- c('mobsim', 'knitr', 'vegan', 'tidyr', 'dplyr', 'ggplot2', 'formatR')
+for (package in package.list) {
+  if (!require(package, character.only = TRUE, quietly = TRUE)) {
+    install.packages(package)
+    library(package, character.only = TRUE)
+  }
+}
+comeve <- sim_poisson_community(s_pool = 25, n_sim = 1000, sad_type = "lnorm", 
+        sad_coef = list("meanlog" = 2, "sdlog" = 1))
+com_eve1 <- sample_quadrats(comeve, n_quadrats = 10, quadrat_area = 0.01, 
+             method = "random", avoid_overlap = T)  
+compat <- sim_thomas_community(s_pool = 25, n_sim = 1000, sad_type = "lnorm", 
+        sad_coef = list("meanlog" = 2, "sdlog" = 1))
+com_pat1 <- sample_quadrats(compat, n_quadrats = 10, quadrat_area = 0.01, 
+             method = "random", avoid_overlap = T)  
+```
 1) Perform a PERMANOVA to test whether or not the spatial distribution of species affects species composition.
+```{r}
+
+all_sites <- bind_rows(com_eve1$spec_dat, com_pat1$spec_dat)
+distrib <- c(rep("Tom", 10), rep("Pos", 10))
+adonis(all_sites ~ distrib, method = "bray", permutations = 999)
+
+
+```
+
+
+> For my randomly generated communities it appears there is a notable affect of spatial distribution on species composition producing a p-value of 0.001 which is well within the standard range for statistical significance. 
 
 2) Load the dataset you are using for your Team Project. 
 Perform an ordination to visualize your dataset.
 Using this ordination, develop some hypotheses relevant to $\beta$-diversity.
 Use a statistic to test one of these hypotheses.
 Succinctly explain the finding and its relevance to your system.
+```{r}
+setwd("~/GitHub/QB2021_Team3")
+abund <- exp(`135FoodWebs`$Log.Abundance.)
+abund.db <- vegdist(abund, method = "bray")
 
+pcoa <- cmdscale(abund.db, eig = TRUE, k = 3)
+explainvar1 <- round(pcoa$eig[1] / sum(pcoa$eig), 3) * 100
+explainvar2 <- round(pcoa$eig[2] / sum(pcoa$eig), 3) * 100
+explainvar3 <- round(pcoa$eig[3] / sum(pcoa$eig), 3) * 100
+sum.eig <- sum(explainvar1, explainvar2, explainvar3)
+
+par(mar = c(5, 5, 1, 2) + 0.1)
+
+plot(pcoa$points[ ,1], pcoa$points[ ,2], ylim = c(-0.2, 0.7),
+     xlab = paste("PCoA 1 (", explainvar1, "%)", sep = ""),
+     ylab = paste("PCoA 2 (", explainvar2, "%)", sep = ""),
+     pch = 16, cex = 2.0, type = "n", cex.lab = 1.5, cex.axis = 1.2, axes = FALSE)
+
+axis(side = 1, labels = T, lwd.ticks = 2, cex.axis = 1.2, las = 1)
+axis(side = 2, labels = T, lwd.ticks = 2, cex.axis = 1.2, las = 1)
+abline(h = 0, v = 0, lty = 3)
+box(lwd = 2)
+
+points(pcoa$points[,1], pcoa$points[,2],
+       pch = 19, cex = 3, bg = "gray", col = "gray")
+text(pcoa$points[,1], pcoa$points[, 2],
+     labels = row.names(pcoa$points)) 
+```
+
+> We hypothesis that from the initial ordination plot the differences in abundance will be clusted by the human development of the environment from which the samples were taken. 
+
+```{r}
+
+  model = lm(I(Log.Abundance.)~Ecosystem.Type.ID, data=`135FoodWebs`)
+summary(model)
+    
+```
+> Using an ANOVA we can see that there is a statisticaly significant impact of the ecosystem time on species abundance.  Ecosystem ID 2 is organic and 3 is intensive farming (though 4 is super intesive so I am not sure how we can actually take away from that), showing that some abundances seems to be less impacted by the ecosystem type. 
