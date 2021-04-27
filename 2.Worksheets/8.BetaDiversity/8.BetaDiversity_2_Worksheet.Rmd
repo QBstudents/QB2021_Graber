@@ -3,10 +3,8 @@ title: '8\. Worksheet: Among Site (Beta) Diversity -- Part 2'
 author: 'Eli Graber; Z620: Quantitative Biodiversity, Indiana University'
 date: "r format(Sys.time(), %d %B, %Y)"
 output:
-  html_document:
-    df_print: paged
   pdf_document: default
-  word_document: default
+
 geometry: margin=2.54cm
 ---
 
@@ -263,12 +261,22 @@ Perform an ordination to visualize your dataset.
 Using this ordination, develop some hypotheses relevant to $\beta$-diversity.
 Use a statistic to test one of these hypotheses.
 Succinctly explain the finding and its relevance to your system.
+
 ```{r}
 setwd("~/GitHub/QB2021_Team3")
-abund <- exp(`135FoodWebs`$Log.Abundance.)
+
+foodWebs <- read.table("135FoodWebs.txt", sep = "\t", header = TRUE, row.names = 1)
+
+foodWebs95 <- subset(foodWebs, Web.ID %in% c(95))
+exponentiated <- exp(foodWebs$Log.Abundance.)
+
+abund <- exponentiated
 abund.db <- vegdist(abund, method = "bray")
 
+
+
 pcoa <- cmdscale(abund.db, eig = TRUE, k = 3)
+
 explainvar1 <- round(pcoa$eig[1] / sum(pcoa$eig), 3) * 100
 explainvar2 <- round(pcoa$eig[2] / sum(pcoa$eig), 3) * 100
 explainvar3 <- round(pcoa$eig[3] / sum(pcoa$eig), 3) * 100
@@ -284,20 +292,20 @@ plot(pcoa$points[ ,1], pcoa$points[ ,2], ylim = c(-0.2, 0.7),
 axis(side = 1, labels = T, lwd.ticks = 2, cex.axis = 1.2, las = 1)
 axis(side = 2, labels = T, lwd.ticks = 2, cex.axis = 1.2, las = 1)
 abline(h = 0, v = 0, lty = 3)
+
+axis(side = 1, labels = T, lwd.ticks = 2, cex.axis = 1.2, las = 1)
+axis(side = 2, labels = T, lwd.ticks = 2, cex.axis = 1.2, las = 1)
+abline(h = 0, v = 0, lty = 3)
 box(lwd = 2)
 
 points(pcoa$points[,1], pcoa$points[,2],
        pch = 19, cex = 3, bg = "gray", col = "gray")
 text(pcoa$points[,1], pcoa$points[, 2],
-     labels = row.names(pcoa$points)) 
+     labels = row.names(pcoa$points))
+  model = lm(I(Log.Abundance.)~Ecosystem.Type.ID, data=`135FoodWebs`)
+summary(model)
 ```
 
 > We hypothesis that from the initial ordination plot the differences in abundance will be clusted by the human development of the environment from which the samples were taken. 
 
-```{r}
-
-  model = lm(I(Log.Abundance.)~Ecosystem.Type.ID, data=`135FoodWebs`)
-summary(model)
-    
-```
 > Using an ANOVA we can see that there is a statisticaly significant impact of the ecosystem time on species abundance.  Ecosystem ID 2 is organic and 3 is intensive farming (though 4 is super intesive so I am not sure how we can actually take away from that), showing that some abundances seems to be less impacted by the ecosystem type. 
